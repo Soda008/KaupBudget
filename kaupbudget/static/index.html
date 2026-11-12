@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KaupBudget</title>
+  <link rel="icon" href="/static/icon.png">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">KaupBudget</div>
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-view="purchases">Purchases</button>
+      <button class="tab" data-view="add">Add receipt</button>
+      <button class="tab" data-view="reports">Reports</button>
+      <button class="tab" data-view="settings">Settings</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ===== Purchases ===== -->
+    <section id="view-purchases" class="view active">
+      <div class="toolbar">
+        <label>Month <input type="month" id="f-month"></label>
+        <label>Category <select id="f-category"></select></label>
+        <input type="search" id="f-search" placeholder="Search vendor…">
+        <label class="check"><input type="checkbox" id="f-missing"> No receipt only</label>
+        <span class="spacer"></span>
+        <button id="btn-add-manual" class="ghost">+ Add purchase</button>
+      </div>
+      <div class="summary" id="purchase-summary"></div>
+      <div class="table-wrap">
+        <table class="data" id="tx-table">
+          <thead><tr><th>Date</th><th>Vendor</th><th>Category</th><th class="num">Amount</th><th>Receipt</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <p class="empty" id="tx-empty" hidden>No purchases here yet. Import bank charges in Settings, or add a receipt.</p>
+      </div>
+    </section>
+
+    <!-- ===== Add receipt ===== -->
+    <section id="view-add" class="view">
+      <div id="drop" class="drop">
+        <p><strong>Drop a receipt here</strong> or <label class="link">choose a file<input type="file" id="file-input" accept=".pdf,.jpg,.jpeg,.png,.webp" hidden></label></p>
+        <p class="muted">PDF, JPEG, PNG or WebP</p>
+      </div>
+      <div id="reading" class="reading" hidden><div class="spinner"></div><span>Reading receipt…</span></div>
+      <div id="review" hidden>
+        <div class="review">
+          <div class="review-img"><img id="rv-img" alt="Receipt image"></div>
+          <form id="rv-form" class="review-form" autocomplete="off">
+            <p class="banner warn" id="rv-error" hidden></p>
+            <div class="grid2">
+              <label>Vendor <input name="vendor" required></label>
+              <label>Date <input name="date" type="date" required></label>
+              <label>Subtotal <input name="subtotal" type="number" step="0.01"></label>
+              <label>Tax <input name="tax" type="number" step="0.01"></label>
+              <label>Tip <input name="tip" type="number" step="0.01"></label>
+              <label>Total paid <input name="total" type="number" step="0.01" required></label>
+            </div>
+
+            <fieldset>
+              <legend>Category</legend>
+              <div class="chips" id="rv-suggest"></div>
+              <select name="category_id" id="rv-category"></select>
+            </fieldset>
+
+            <fieldset>
+              <legend>Bank charge</legend>
+              <div id="rv-matches" class="matches"></div>
+            </fieldset>
+
+            <details id="rv-items-wrap">
+              <summary>Line items (<span id="rv-item-count">0</span>)</summary>
+              <table class="data compact"><tbody id="rv-items"></tbody></table>
+            </details>
+
+            <div class="actions">
+              <button type="submit" class="primary">Save</button>
+              <button type="button" id="rv-reread" class="ghost">Read again</button>
+              <button type="button" id="rv-discard" class="ghost danger">Discard</button>
+              <span class="muted" id="rv-reader"></span>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Reports ===== -->
+    <section id="view-reports" class="view">
+      <div class="toolbar">
+        <label>Show <select id="r-months">
+          <option value="6">Last 6 months</option>
+          <option value="12" selected>Last 12 months</option>
+          <option value="24">Last 24 months</option>
+        </select></label>
+      </div>
+      <div class="card">
+        <h2>Spending by category, per month</h2>
+        <div class="chart-box"><canvas id="chart-monthly" aria-label="Monthly spending by category"></canvas></div>
+        <div class="table-wrap"><table class="data compact" id="monthly-table"></table></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>Category review</h2>
+          <select id="r-category"></select>
+        </div>
+        <div class="tiles" id="review-tiles"></div>
+        <div class="chart-box short"><canvas id="chart-category" aria-label="Monthly spending for the selected category"></canvas></div>
+        <h3>Top vendors</h3>
+        <table class="data compact" id="vendor-table"></table>
+      </div>
+    </section>
+
+    <!-- ===== Settings ===== -->
+    <section id="view-settings" class="view">
+      <div class="card">
+        <h2>Receipt reader (AI)</h2>
+        <p class="muted">Pick which AI reads your receipts. You can switch any time.</p>
+        <div id="providers" class="providers"></div>
+        <button id="btn-save-settings" class="primary">Save reader settings</button>
+        <span id="settings-saved" class="muted" hidden>Saved.</span>
+      </div>
+
+      <div class="card">
+        <h2>Import bank charges</h2>
+        <p class="muted">Download a CSV of transactions from US Bank and import it here. Re-importing the same file won't create duplicates.</p>
+        <label class="filebtn">Choose CSV…<input type="file" id="csv-input" accept=".csv" hidden></label>
+        <span id="csv-result" class="muted"></span>
+      </div>
+
+      <div class="card">
+        <h2>Categories</h2>
+        <ul id="cat-list" class="cat-list"></ul>
+        <form id="cat-add" class="inline">
+          <input name="name" placeholder="New category" required>
+          <button class="ghost">Add</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>About</h2>
+        <p class="muted" id="about"></p>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===== Purchase detail ===== -->
+  <dialog id="tx-dialog">
+    <form method="dialog" class="dlg-head">
+      <h2 id="td-title">Purchase</h2>
+      <button class="ghost icon" aria-label="Close">✕</button>
+    </form>
+    <div class="dlg-body">
+      <div class="td-receipt" id="td-receipt"></div>
+      <form id="td-form" class="td-form" autocomplete="off">
+        <label>Vendor <input name="vendor" required></label>
+        <label>Date <input name="date" type="date" required></label>
+        <label>Amount <input name="amount" type="number" step="0.01" required></label>
+        <fieldset>
+          <legend>Category</legend>
+          <div class="chips" id="td-suggest"></div>
+          <select name="category_id" id="td-category"></select>
+        </fieldset>
+        <label>Notes <textarea name="notes" rows="2"></textarea></label>
+        <p class="muted" id="td-bank"></p>
+        <div class="actions">
+          <button type="submit" class="primary">Save</button>
+          <button type="button" id="td-delete" class="ghost danger">Delete</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="/static/vendor/chart.umd.min.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>

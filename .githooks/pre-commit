@@ -1,0 +1,8 @@
+#!/bin/sh
+# Stops a commit that contains an API key or private data.
+ROOT="$(git rev-parse --show-toplevel)"
+for PY in python3 python py; do
+    command -v "$PY" >/dev/null 2>&1 && exec "$PY" "$ROOT/tools/check_secrets.py" --staged
+done
+echo "secret check: Python not found - commit blocked to be safe." >&2
+exit 1

@@ -1,0 +1,8 @@
+fastapi>=0.115
+uvicorn[standard]>=0.30
+python-multipart>=0.0.9
+anthropic>=2.0
+pillow>=10.0
+pypdfium2>=4.30
+# Desktop window only (not needed on EC2):
+pywebview>=5.0; sys_platform == "win32" or sys_platform == "darwin"

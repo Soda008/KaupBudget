@@ -1,0 +1,5 @@
+# Hook scripts must keep Unix line endings or they fail on Mac/Linux/EC2.
+.githooks/* text eol=lf
+*.sh        text eol=lf
+*.yml       text eol=lf
+*.bat       text eol=crlf
